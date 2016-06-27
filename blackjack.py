@@ -67,11 +67,27 @@ class BJ_Hand(cards.Hand):
     def is_busted(self):
         return self.total > 21
 
-#class BJ_Purse(BJ_Hand):
-    #def purse_total(self):
+class BJ_Purse(object):
+    """Кошелек каждого игрока, чтобы делать ставки"""
+    def __init__(self, money):
+        self.money = money
+
+    def __str__(self):
+        rep = "\nВ кошельке" + self.money    
+
+    def add(self, money):
+        self.money += money
+        
+    def give(self, money, other_purse):
+        self.money -= money
+        other_purse.add(money)
+
 
 class BJ_Player(BJ_Hand):
     """Игрок в Блек-джек"""
+    def __init__(self, name, purse):
+        super().__init__(name)
+        self.purse = purse
     
     def __repr__(self):
         return self.name
@@ -79,13 +95,17 @@ class BJ_Player(BJ_Hand):
     def is_hitting(self):
         response = games.ask_yes_no("\n" + self.name + ",будете брать еще карты? (Y/N): ")
         return response == "y"
+
     def bust(self):
         print(self.name, "перебрал")
         self.lose()
+
     def lose(self):
         print(self.name, "проиграл")
+        
     def win(self):
         print(self. name, "выиграл")
+
     def push(self):
         print(self.name, "сыграл с компьютером вничью")
 
@@ -106,15 +126,13 @@ class BJ_Dealer(BJ_Hand):
 class BJ_Game(object):
     """Игра в блек-джек"""
     
-    def __init__(self, names):
-        self.players = []
-        for name in names:
-            player = BJ_Player(name)
-            self.players.append(player)
+    def __init__(self, players, bank):
+        self.players = players
         self.dealer = BJ_Dealer("Dealer")
         self.deck = BJ_Deck()
+        self.bank = bank
         self.deck.populate()
-        self.deck.shuffle()    
+        self.deck.shuffle()      
 
     @property
     def still_playing(self):
@@ -132,16 +150,28 @@ class BJ_Game(object):
                 player.bust()
 
     def play(self):
+        #сбор ставок
+        rates = {}
+        for player in self.players:
+            rate = int(input("\nСколько хочет поставить "+ player.name + "? (Max. ставка - все его деньги) "))
+            while not self.is_enough_money_in_purse(player, rate):
+                print("Cтавка выше остатка в кошельке")
+                rate = int(input("\nСколько хочет поставить "+ player.name + "? (Max. ставка - все его деньги) "))
+            rates[player] = rate
+          
         # сдача всем по 2 карты
         self.deck.deal(self.players + [self.dealer], per_hand = 2)
+
         # первая карта дилера переворачивается рубашкой вверх
         self.dealer.flip_first_card()
         for player in self.players:
             print(player)
         print(self.dealer)
+
         # сдача дополнительных карт игрокам
         for player in self.players:
             self.__additional_cards(player)
+
         # первая карта дилера раскрывается
         self.dealer.flip_first_card()
         if not self.still_playing:
@@ -164,6 +194,33 @@ class BJ_Game(object):
                         player.lose()
                     else:
                         player.push()
+
+        for player in self.players:
+            # игрок получает + к своей ставке, если у него с дилером <= 21, и сумма игрока > дилера 
+            if player.total > self.dealer.total and player.total <= 21 and self.dealer.total <= 21:
+                player.purse.money += rates[player]
+                self.bank.money -= rates[player]
+                print(player.name, player.purse.money)
+
+            # игрок получает + к своей ставке, если у него <= 21, а у дилера > 21
+            elif player.total <= 21 and self.dealer.total > 21:
+                player.purse.money += rates[player]
+                self.bank.money -= rates[player]
+                print(player.name, player.purse.money)
+
+            # игрок теряет ставку, если у него с дилером <= 21, и сумма игрока < дилера 
+            elif (player.total < self.dealer.total and player.total < 21 and self.dealer.total <= 21):
+                player.purse.money -= rates[player]
+                self.bank.money += rates[player]
+                print(player.name, player.purse.money)
+
+            # игрок теряет ставку, если у него > 21
+            elif player.total > 21:
+                player.purse.money -= rates[player]
+                self.bank.money += rates[player]
+                print(player.name, player.purse.money)
+            print(self.bank.money)
+
         # удаление всех карт
         for player in self.players:
             player.clear()
@@ -182,7 +239,6 @@ class BJ_Game(object):
             for player in people:
                 score[player].append(self.deck.cards[position])      
                 position += 1
-        print(score)
         
         for player in people:
             total = 0
@@ -192,10 +248,9 @@ class BJ_Game(object):
                 total += card.value
                 if contains_ace and total <= 11:
                     total += 10
-                print(player, total)
+
             while (player in self.players and total < 21) or (player in [self.dealer] and total < 17):
                     if position + 1 > len(self.deck.cards) - (position + 1):
-                        print("Недостаточно карт")
                         return False
 
                     score[player].append(self.deck.cards[position])
@@ -204,30 +259,49 @@ class BJ_Game(object):
                     total += self.deck.cards[position].value
                     if contains_ace and total <= 11:
                         total += 10
-                    print(score)
-                    print(total)
-                    position += 1
+                        position += 1
         return True
 
-
+    def is_enough_money_in_purse(self, player, rate):
+        # Проверка достаточности денег
+        if player.purse.money < rate:
+            return False
+        return True
+ 
 def main():
     print("\n\t\tДобро пожаловать за игровой стол Блек-джека!\n")
-    names = []
+    players = []
     number = games.ask_number("Сколько всего игроков? (1-7): ", low = 1, high = 8)
+    fund = int(input("\nКакая сумма в банке казино? "))
+    bank = BJ_Purse(fund)
+
     for i in range(number):
         name = input("Введите имя игрока: ")
-        names.append(name)
+        amount = int(input("Сколько денег готов потратить " + name + "? "))
+        purse = BJ_Purse(amount)
+        player = BJ_Player(name, purse)
+        players.append(player)
         print()
-    game = BJ_Game(names)
+    
+    game = BJ_Game(players, bank)
     again = None
     while again != "n":
         game.play()
+
         if not game.is_enough_cards():
             game.deck.populate()
             game.deck.shuffle()
-            print("\nКолода наполнена заново")    
-        again = games.ask_yes_no("\nХотите сыграть еще раз?(y/n) ")   
+            print("\nКолода наполнена заново")
+
+        for player in players:
+            if not game.is_enough_money_in_purse(player, rate = 1):
+                print(player.name, "проиграл все деньги и выбывает из игры")
+                players.remove(player)
+            if len(players) == 0:
+                again = "n"    
+            else:    
+                again = games.ask_yes_no("\nХотите сыграть еще раз?(y/n) ")   
     input("\n\nНажмите Enter, чтобы выйти.")
 
-main()
 
+main()
