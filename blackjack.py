@@ -3,6 +3,15 @@
 
 import cards, games
 
+class BJException(Exception):
+    pass
+
+class ZeroInBank(BJException):
+    pass
+
+class NotEnoughMoneyInBank(BJException):
+    pass
+
 
 class BJ_Card(cards.Card):
     """Карта для игры в Блек-джек"""
@@ -160,6 +169,7 @@ class BJ_Game(object):
         #сбор ставок
         rates = {}
         rates_sum = 0
+
         for player in self.players:
             rate = int(input("\nСколько хочет поставить "+ player.name + "? (Max. ставка - все его деньги) "))
             while rate <= 0 or not player.purse.is_enough_money(rate):
@@ -171,10 +181,9 @@ class BJ_Game(object):
             rates[player] = rate
             rates_sum += rate
 
-        # проверка на достаточность денег в банке
+        # проверка сможет ли казино погасить выигрыш всех игроков
         if not self.bank.is_enough_money(rates_sum):
-            print("Казино не может позволить данные ставки")
-            return
+            raise NotEnoughMoneyInBank("Значение self.bank.money < rates")
 
         # сдача всем по 2 карты
         self.deck.deal(self.players + [self.dealer], per_hand = 2)
@@ -238,6 +247,10 @@ class BJ_Game(object):
         for player in self.players:
             player.clear()
         self.dealer.clear()
+
+        # проверка остались ли в казино деньги
+        if self.bank.money == 0:
+            raise ZeroInBank("Значение self.bank == 0")
     
     def is_enough_cards(self, per_hand = 2):
         # Проверка достаточности карт в колоде после очередного раунда
@@ -281,6 +294,9 @@ def main():
     players = []
     number = games.ask_number("Сколько всего игроков? (1-7): ", low = 1, high = 8)
     fund = int(input("\nКакая сумма в банке казино? "))
+    while fund <= 0:
+        print("Сумма может быть только больше нуля.")
+        fund = int(input("\nКакая сумма в банке казино? "))
     bank = BJ_Purse(fund)
 
     for i in range(number):
@@ -294,23 +310,31 @@ def main():
     game = BJ_Game(players, bank)
     again = None
     while again != "n":
-        game.play()
 
-        if not game.is_enough_cards():
-            game.deck.populate()
-            game.deck.shuffle()
-            print("\nКолода наполнена заново")
+        try:
+            game.play()
+        except ZeroInBank:
+            print("\nКазино обанкротилось")
+            input("\n\nНажмите Enter, чтобы выйти")
+            return
+        except NotEnoughMoneyInBank:
+            print("Казино не может позволить данные ставки")
+        else:
+            if not game.is_enough_cards():
+                game.deck.populate()
+                game.deck.shuffle()
+                print("\nКолода наполнена заново")
 
-        for player in players:
-            if not player.purse.is_enough_money(rate = 1):
-                print(player.name, "проиграл все деньги и выбывает из игры")
-                players.remove(player)
-                print(players)
-                print(game.players)
-            if len(players) == 0:
-                again = "n"
-            else:
-                again = games.ask_yes_no("\nХотите сыграть еще раз?(y/n) ")
+            for player in players:
+                if not player.purse.is_enough_money(rate = 1):
+                    print(player.name, "проиграл все деньги и выбывает из игры")
+                    players.remove(player)
+                    print(players)
+                    print(game.players)
+                if len(players) == 0:
+                    again = "n"
+                else:
+                    again = games.ask_yes_no("\nХотите сыграть еще раз?(y/n) ")
 
     input("\n\nНажмите Enter, чтобы выйти.")
 
