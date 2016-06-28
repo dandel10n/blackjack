@@ -299,10 +299,16 @@ def main():
     print("\n\t\tДобро пожаловать за игровой стол Блек-джека!\n")
     players = []
     number = games.ask_number("Сколько всего игроков? (1-7): ", low = 1, high = 8)
-    fund = int(input("\nКакая сумма в банке казино? "))
-    while fund <= 0:
-        print("Сумма может быть только больше нуля.")
-        fund = int(input("\nКакая сумма в банке казино? "))
+    while True:
+        try:
+            fund = int(input("\nКакая сумма в банке казино? "))
+            if fund <= 0:
+                print("Сумма может быть только больше нуля.")
+                continue
+            break
+        except ValueError:
+            print("Ввести можно только число")
+
     bank = BJ_Purse(fund)
 
     for i in range(number):
