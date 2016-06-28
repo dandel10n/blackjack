@@ -313,7 +313,15 @@ def main():
 
     for i in range(number):
         name = input("Введите имя игрока: ")
-        amount = int(input("Сколько денег готов потратить " + name + "? "))
+        while True:
+            try:
+                amount = int(input("Сколько денег готов потратить " + name + "? "))
+                if amount <= 0:
+                    print("Сумма может быть только больше нуля.")
+                    continue
+                break
+            except ValueError:
+                print("Ввести можно только число")
         purse = BJ_Purse(amount)
         player = BJ_Player(name, purse)
         players.append(player)
@@ -341,8 +349,6 @@ def main():
                 if not player.purse.is_enough_money(rate = 1):
                     print(player.name, "проиграл все деньги и выбывает из игры")
                     players.remove(player)
-                    print(players)
-                    print(game.players)
                 if len(players) == 0:
                     again = "n"
                 else:
