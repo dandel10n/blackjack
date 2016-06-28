@@ -73,7 +73,7 @@ class BJ_Purse(object):
         self.money = money
 
     def __str__(self):
-        rep = "\nВ кошельке" + self.money
+        rep = "\nВ кошельке " + self.money
 
     def add(self, money):
         self.money += money
@@ -84,9 +84,7 @@ class BJ_Purse(object):
 
     def is_enough_money(self, rate):
         # Проверка достаточности денег
-        if self.money < rate:
-            return False
-        return True
+        return self.money >= rate
 
 
 class BJ_Player(BJ_Hand):
@@ -318,3 +316,4 @@ def main():
 
 
 main()
+
