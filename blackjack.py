@@ -171,13 +171,19 @@ class BJ_Game(object):
         rates_sum = 0
 
         for player in self.players:
-            rate = int(input("\nСколько хочет поставить "+ player.name + "? (Max. ставка - все его деньги) "))
-            while rate <= 0 or not player.purse.is_enough_money(rate):
-                if rate <= 0:
-                    print("Ставка должна быть больше нуля")
-                else:
-                    print("Cтавка выше остатка в кошельке")
-                rate = int(input("\nСколько хочет поставить "+ player.name + "? (Max. ставка - все его деньги) "))
+            while True:
+                try:
+                    rate = int(input("\nСколько хочет поставить "+ player.name + "? (Max. ставка - все его деньги) "))
+                    if rate <= 0:
+                        print("Ставка должна быть больше нуля")
+                        continue
+                    if not player.purse.is_enough_money(rate):
+                        print("Cтавка выше остатка в кошельке")
+                        continue
+                    break
+                except ValueError:
+                    print("Ввести можно только число")
+
             rates[player] = rate
             rates_sum += rate
 
