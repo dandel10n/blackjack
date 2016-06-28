@@ -29,8 +29,10 @@ def ask_number(question, low, high):
     response = None
     while True:
         try:
-            while response not in range(low, high):
+            if response not in range(low, high):
                 response = int(input(question))
+                print("Число вне указанного диапазона")
+                continue
             break
         except ValueError:
             print("Ввести можно только число.")
