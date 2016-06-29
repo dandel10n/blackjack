@@ -335,8 +335,7 @@ def main():
             game.play()
         except ZeroInBank:
             print("\nКазино обанкротилось")
-            input("\n\nНажмите Enter, чтобы выйти")
-            return
+            break
         except NotEnoughMoneyInBank:
             print("Казино не может позволить данные ставки")
         else:
@@ -349,10 +348,10 @@ def main():
                 if not player.purse.is_enough_money(rate = 1):
                     print(player.name, "проиграл все деньги и выбывает из игры")
                     players.remove(player)
-                if len(players) == 0:
-                    again = "n"
-                else:
-                    again = games.ask_yes_no("\nХотите сыграть еще раз?(y/n) ")
+            if len(players) == 0:
+                break
+            else:
+                again = games.ask_yes_no("\nХотите сыграть еще раз?(y/n) ")
 
     input("\n\nНажмите Enter, чтобы выйти.")
 
