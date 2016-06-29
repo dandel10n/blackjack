@@ -1,7 +1,7 @@
 # Блек-джек
 # От 1 до 7 игроков против дилера
 
-import cards, games, settingss
+import cards, games, settings
 
 
 class BJException(Exception):

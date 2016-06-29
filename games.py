@@ -26,13 +26,11 @@ def ask_yes_no(question):
     
 def ask_number(question, low, high):
     """Просит ввести число из заданного диапазона"""
-    response = None
     while True:
         try:
+            response = int(input(question))
             if response not in range(low, high):
-                response = int(input(question))
-                if response not in range(low, high):
-                    print("Число вне указанного диапазона")
+                print("Число вне указанного диапазона")
                 continue
             break
         except ValueError:
