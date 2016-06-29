@@ -1,7 +1,8 @@
 # Блек-джек
 # От 1 до 7 игроков против дилера
 
-import cards, games
+import cards, games, settingss
+
 
 class BJException(Exception):
     pass
@@ -247,7 +248,8 @@ class BJ_Game(object):
             elif player.total > 21:
                 player.purse.give(rates[player], self.bank)
                 print(player.name, player.purse.money)
-            print(self.bank.money)
+            if settings.DEBUG:
+                print(self.bank.money)
 
         # удаление всех карт
         for player in self.players:
@@ -299,17 +301,6 @@ def main():
     print("\n\t\tДобро пожаловать за игровой стол Блек-джека!\n")
     players = []
     number = games.ask_number("Сколько всего игроков? (1-7): ", low = 1, high = 8)
-    while True:
-        try:
-            fund = int(input("\nКакая сумма в банке казино? "))
-            if fund <= 0:
-                print("Сумма может быть только больше нуля.")
-                continue
-            break
-        except ValueError:
-            print("Ввести можно только число")
-
-    bank = BJ_Purse(fund)
 
     for i in range(number):
         name = input("Введите имя игрока: ")
@@ -327,6 +318,7 @@ def main():
         players.append(player)
         print()
 
+    bank = BJ_Purse(settings.BANK_AMOUNT)
     game = BJ_Game(players, bank)
     again = None
     while again != "n":
@@ -356,5 +348,6 @@ def main():
     input("\n\nНажмите Enter, чтобы выйти.")
 
 
-main()
+if __name__ == '__main__':
+    main()
 
