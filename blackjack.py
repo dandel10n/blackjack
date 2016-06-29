@@ -36,9 +36,13 @@ class BJ_Deck(cards.Deck):
     """Колода для игры в Блек-джек."""
 
     def populate(self):
-        for suit in BJ_Card.SUITS:
-            for rank in BJ_Card.RANKS:
-                self.cards.append(BJ_Card(rank, suit))
+        for i in range(settings.AMOUNT_OF_DECKS):
+            for suit in BJ_Card.SUITS:
+                for rank in BJ_Card.RANKS:
+                    self.cards.append(BJ_Card(rank, suit))
+
+        if settings.DEBUG:
+            print("Колода состоит из", len(self.cards), "карт")
 
 
 class BJ_Hand(cards.Hand):
